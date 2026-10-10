@@ -2,7 +2,7 @@
 
 Surfaced is an iOS-first App Store Optimization (ASO) platform. It tracks where an app ranks for the keywords that matter, snapshots competitor metadata, reads reviews, and ranks keyword opportunities worth acting on.
 
-**Status:** in development (runs locally with offline fixtures; no production scale is claimed).
+**Status:** Prototype (local, offline fixtures; no production scale is claimed).
 
 > Source code is private. This repository is a README-only architecture write-up. Happy to walk through the code live: [adk08644@gmail.com](mailto:adk08644@gmail.com).
 
@@ -15,7 +15,7 @@ Apple publishes almost no usable ASO data: no absolute search volume, no difficu
 ```mermaid
 flowchart TB
   SRC[Public Apple endpoints: autocomplete, search results] --> W
-  subgraph W[4 scheduled Python ingestion workers]
+  subgraph W[5 async Python ingestion worker modules]
     RT[rank tracker]
     RV[reviews fetcher]
     MS[metadata snapshotter]
@@ -24,8 +24,6 @@ flowchart TB
   W --> CR[crawl_runs log]
   W --> DB[(PostgreSQL 16 + TimescaleDB, 17 tables)]
   DB --> API[Typed FastAPI service]
-  DB --> ETL[Checkpointed 5-stage ETL, DuckDB SQL]
-  ETL --> DS[Curated keyword dataset]
   API --> WEB[Next.js dashboard]
   API --> MCP[MCP server, 14 tools]
 ```
@@ -40,8 +38,6 @@ flowchart TB
 
 **Side-effect-free scoring.** The keyword scoring module has no database or network access, so the API, the workers and the tests run the same math. Observed evidence is kept apart from the small versioned heuristics that rank opportunities, and the model version is stamped on each result so a scoring change is attributable.
 
-**Resumable ETL.** A checkpointed, resumable 5-stage pipeline over a keyword corpus (JSONL staging, deduplication, blocklist normalization) publishes a curated dataset through DuckDB SQL.
-
 **Testable without the network.** pytest contract and parser tests run against offline fixtures, so the whole pipeline can be exercised without touching Apple.
 
 **AI-agent access.** The same data is exposed to AI assistants through a 14-tool MCP server.
@@ -50,10 +46,9 @@ flowchart TB
 
 | Item | Value |
 |---|---|
-| Scheduled ingestion workers | 4 |
+| Scheduled ingestion workers | 5 |
 | Schema | 17 tables, versioned SQL migrations |
 | MCP tools | 14 |
-| ETL | 5 stages, checkpointed and resumable |
 
 ## Tech stack
 
