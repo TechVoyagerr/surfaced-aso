@@ -20,6 +20,7 @@ flowchart TB
     RV[reviews fetcher]
     MS[metadata snapshotter]
     TM[keyword miner]
+    AC[Astro MCP connector]
   end
   W --> CR[crawl_runs log]
   W --> DB[(PostgreSQL 16 + TimescaleDB, 17 tables)]
@@ -30,7 +31,7 @@ flowchart TB
 
 ## Key engineering decisions
 
-**Auditable ingestion.** Four scheduled workers (rank tracking, reviews, metadata snapshots, keyword mining) write time-series data to TimescaleDB. Every crawl is recorded in a `crawl_runs` row, so a partial or failed sweep is visible and can be re-run rather than silently missing.
+**Auditable ingestion.** Five async ingestion worker modules (rank tracking, reviews, metadata snapshots, keyword mining and an Astro MCP connector) write time-series data to TimescaleDB. Every crawl is recorded in a `crawl_runs` row, so a partial or failed sweep is visible and can be re-run rather than silently missing.
 
 **Time series with a safe fallback.** Rankings are stored as a TimescaleDB hypertable on capture time. The migration degrades to a plain PostgreSQL table if the extension is unavailable, so the stack still runs on a laptop.
 
@@ -46,7 +47,7 @@ flowchart TB
 
 | Item | Value |
 |---|---|
-| Scheduled ingestion workers | 5 |
+| Async ingestion worker modules | 5 |
 | Schema | 17 tables, versioned SQL migrations |
 | MCP tools | 14 |
 
